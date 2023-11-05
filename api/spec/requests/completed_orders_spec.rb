@@ -27,6 +27,46 @@ RSpec.describe "Completed Orders", type: :request do
     end
   end
 
+  describe "GET /completed_orders/:order_id" do
+    context 'with valid parameter' do
+      before do
+        new_customer = customer
+        order_id = SecureRandom.uuid
+        FactoryBot.create(
+          :completed_order,
+          customer_id: new_customer.id,
+          order_id: order_id,
+          total_in_cents: 0,
+          date: Date.parse("02/02/2022")
+        )
+
+        get "/api/v1/completed_orders/#{order_id}", headers: headers
+      end
+
+      it 'returns http status code 200' do
+        expect(response).to have_http_status(200)
+      end
+
+      it 'returns order id not nil' do
+        expect(json[:data][:orderId]).not_to be_nil
+      end
+    end
+
+    context 'with invalid parameter' do
+      before do
+        get "/api/v1/completed_orders/nil", headers: headers
+      end
+
+      it 'returns http status code 404' do
+        expect(response).to have_http_status(404)
+      end
+
+      it 'returns error order not found' do
+        expect(json[:data]).to eq('Order not found')
+      end
+    end
+  end
+
   describe "POST /completed_orders" do
     context 'with valid parameters' do
       before do
@@ -48,7 +88,7 @@ RSpec.describe "Completed Orders", type: :request do
         expect(json[:status]).to eq("Success")
       end
 
-      it 'returns completed_order_id' do
+      it 'returns order id not nil' do
         expect(json[:data][:orderId]).not_to be_nil
       end
     end

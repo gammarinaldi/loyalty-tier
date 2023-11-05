@@ -21,25 +21,41 @@ RSpec.describe "Customers", type: :request do
   end
 
   describe "GET /customers/:customer_id" do
-    before do
-      new_customer = customer
-      FactoryBot.create(
-        :completed_order,
-        customer_id: new_customer.id,
-        order_id: SecureRandom.uuid,
-        total_in_cents: 0,
-        date: Date.parse("02/02/2022")
-      )
+    context 'with valid parameter' do
+      before do
+        new_customer = customer
+        FactoryBot.create(
+          :completed_order,
+          customer_id: new_customer.id,
+          order_id: SecureRandom.uuid,
+          total_in_cents: 0,
+          date: Date.parse("02/02/2022")
+        )
 
-      get "/api/v1/customers/#{new_customer.id}", headers: headers
+        get "/api/v1/customers/#{new_customer.id}", headers: headers
+      end
+
+      it 'returns http status code 200' do
+        expect(response).to have_http_status(200)
+      end
+
+      it 'returns current tier' do
+        expect(json[:data][:currentTier]).to eq('Bronze')
+      end
     end
 
-    it 'returns http status code 200' do
-      expect(response).to have_http_status(200)
-    end
+    context 'with invalid parameter' do
+      before do
+        get "/api/v1/customers/1", headers: headers
+      end
 
-    it 'returns current tier' do
-      expect(json[:data][:currentTier]).to eq('Bronze')
+      it 'returns http status code 404' do
+        expect(response).to have_http_status(404)
+      end
+
+      it 'returns error customer not found' do
+        expect(json[:data]).to eq('Customer not found')
+      end
     end
   end
 
@@ -125,7 +141,7 @@ RSpec.describe "Customers", type: :request do
       end
     end
 
-    context 'spent is zero in current year' do
+    context 'spent zero in current year' do
       before do
         new_customer = customer
         FactoryBot.create(
